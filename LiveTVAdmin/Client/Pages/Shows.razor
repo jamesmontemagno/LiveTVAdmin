@@ -1,0 +1,142 @@
+@page "/shows"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using LiveTVAdmin.Shared
+@*@attribute [Authorize]*@
+@inject HttpClient Http
+
+<h1>Show series</h1>
+
+<p>Create, updated, or delete show series.</p>
+
+@if (shows == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Url</th>
+                <th>Description</th>
+                <th>Thumbnail Url</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var show in shows)
+            {
+                <tr>
+                    <td>@show.Id</td>
+                    <td>@show.Name</td>
+                    <td>@show.Url</td>
+                    <td>@show.Description</td>
+                    <td>@show.ThumbnailUrl</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="@(e => Edit(show))">Edit</button>
+                        <button class="btn btn-primary" @onclick="@(e => DeleteAsync(show))">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    
+
+    <button class="btn btn-primary" @onclick="RefreshAsync">Refresh</button>
+
+    <EditForm Model="@show" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <p>
+            <label>
+                Identifier:
+                <InputText id="id" @bind-Value="show.Id" />
+            </label>
+        </p>
+        <p>
+            <label>
+                Name:
+                <InputText id="name" @bind-Value="show.Name" />
+            </label>
+        </p>
+        <p>
+            <label>
+                Url:
+                <InputText id="url" @bind-Value="show.Url" />
+            </label>
+        </p>
+        <p>
+            <label>
+                Description:
+                <InputText id="description" @bind-Value="show.Description" />
+            </label>
+        </p>
+        <p>
+            <label>
+                ThumbnailUrl:
+                <InputText id="thumbnailUrl" @bind-Value="show.ThumbnailUrl" />
+            </label>
+        </p>
+
+        <button type="submit">Submit</button>
+    </EditForm>
+}
+
+@code {
+    private Show show = new Show();
+
+    private async void HandleValidSubmit()
+    {
+        if (show.IsEditing)
+        {
+            await Http.PutAsJsonAsync($"Show/{show.Id}", show);
+            show.IsEditing = false;
+        }
+        else
+        {
+            await Http.PostAsJsonAsync("Show", show);
+        }
+        show = new Show();
+        await RefreshAsync();
+        Console.WriteLine("OnValidSubmit");
+    }
+
+
+    async Task DeleteAsync(Show deleteShow)
+    {
+        await Http.DeleteAsync($"Show/{deleteShow.Id}");
+        await RefreshAsync();
+    }
+
+    private void Edit(Show editShow)
+    {
+        show = editShow;
+        show.IsEditing = true;
+        StateHasChanged();
+    }
+
+    async Task RefreshAsync()
+    {
+        try
+        {
+            shows = await Http.GetFromJsonAsync<Show[]>("Show");
+            StateHasChanged();
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+
+    }
+
+    private Show[] shows;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+    }
+}
