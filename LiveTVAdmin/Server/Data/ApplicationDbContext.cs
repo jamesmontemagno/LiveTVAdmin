@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LiveTVAdmin.Shared;
 
 namespace LiveTVAdmin.Server.Data
 {
@@ -17,5 +18,14 @@ namespace LiveTVAdmin.Server.Data
             IOptions<OperationalStoreOptions> operationalStoreOptions) : base(options, operationalStoreOptions)
         {
         }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+            builder.Entity<Show>();
+            builder.Entity<Episode>();
+        }
+        public DbSet<LiveTVAdmin.Shared.Episode> Episode { get; set; }
+        public DbSet<LiveTVAdmin.Shared.Show> Show { get; set; }
     }
 }

@@ -5,52 +5,191 @@
 @attribute [Authorize]
 @inject HttpClient Http
 
-<h1>Weather forecast</h1>
+<h1>Episodes</h1>
 
-<p>This component demonstrates fetching data from the server.</p>
+<p>Create, updated, or delete episodes.</p>
 
-@if (forecasts == null)
+@if (episodes == null)
 {
     <p><em>Loading...</em></p>
 }
 else
+
 {
+    <p>
+        Future only:
+        <input type="checkbox" id="futureonly" @bind="futureOnly"/>
+    </p>
     <table class="table">
         <thead>
             <tr>
-                <th>Date</th>
-                <th>Temp. (C)</th>
-                <th>Temp. (F)</th>
-                <th>Summary</th>
+                <th>ShowId</th>
+                <th>Title</th>
+                <th>Scheduled Start Time</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var forecast in forecasts)
+            @foreach (var episode in episodes)
             {
                 <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
-                    <td>@forecast.Summary</td>
+                    <td>@episode.ShowId</td>
+                    <td>@episode.Title</td>
+                    <td>@episode.ScheduledStartTime</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="@(e => Edit(episode))">Edit</button>
+                        <button class="btn btn-primary" @onclick="@(e => DeleteAsync(episode))">Delete</button>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
+    
+
+    <button class="btn btn-primary" @onclick="RefreshAsync">Refresh</button>
+
+    <EditForm Model="@episode" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <p>
+            <label>
+                Identifier:
+            </label><br />
+            <InputText id="id" @bind-Value="episode.Id" />
+        </p>
+        <p>
+            <label>
+                Show Id:
+            </label><br />
+            <InputSelect @bind-Value="episode.ShowId">
+                <option value="">Select show</option>
+                @foreach (var show in shows)
+                    {
+                    <option value="@show.Id" label="@show.Id" />
+                    }
+            </InputSelect>
+        </p>
+        <p>
+            <label>
+                Title:
+            </label><br />
+            <InputText id="url" @bind-Value="episode.Title" />
+        </p>
+
+        <p>
+            <label>
+                Schedueld Start Date/Time:
+            </label><br />
+            <InputDate id="scheduledstarttime" @bind-Value="episode.ScheduledStartTime" />
+            <InputText type="time" @bind-Value="TimeProxy" />
+        </p>
+        <p>
+            <label>
+                Description (include [Featuring: guest (twitter), guest 2 (twitter)] :
+            </label><br />
+            <InputTextArea id="description" @bind-Value="episode.Description" />
+        </p>
+        <p>
+            <label>
+                ThumbnailUrl:
+            </label><br />
+            <InputText id="thumbnailUrl" @bind-Value="episode.ThumbnailUrl" />
+        </p>
+
+        <p>
+            <label>
+                Url (Twitch or YouTube):
+            </label><br />
+            <InputText id="url" @bind-Value="episode.Url" />
+        </p>
+
+        <p>
+            <label>
+                Community Links(optional):
+            </label><br />
+            <InputText id="communitylinks" @bind-Value="episode.CommunityLinksUrl" />
+        </p>
+
+
+        <p>
+            <label>
+                Show Notes (optional):
+            </label><br />
+            <InputText id="shownotes" @bind-Value="episode.ShowNotesUrl" />
+        </p>
+
+
+
+        <button type="submit">Submit</button>
+    </EditForm>
 }
 
 @code {
-    private WeatherForecast[] forecasts;
 
-    protected override async Task OnInitializedAsync()
+    private bool futureOnly = true;
+    private Episode episode;
+
+    private async void HandleValidSubmit()
+    {
+        episode.ScheduledStartTime = episode.ScheduledStartTime.Date.Add(LocalTime);
+        if (episode.IsEditing)
+        {
+            await Http.PutAsJsonAsync($"api/Episodes/{episode.Id}", episode);
+            episode.IsEditing = false;
+        }
+        else
+        {
+            await Http.PostAsJsonAsync("api/Episodes", episode);
+        }
+        episode = new Episode();
+        await RefreshAsync();
+        Console.WriteLine("OnValidSubmit");
+    }
+
+    private TimeSpan LocalTime = TimeSpan.FromHours(0);
+    private string TimeProxy
+    {
+        get => LocalTime.ToString();
+        set => TimeSpan.TryParse(value, out LocalTime);
+    }
+
+    async Task DeleteAsync(Episode delete)
+    {
+        await Http.DeleteAsync($"api/Episodes/{delete.Id}");
+        await RefreshAsync();
+    }
+
+    private void Edit(Episode edit)
+    {
+        LocalTime = edit.ScheduledStartTime.TimeOfDay;
+        episode = edit;
+        episode.IsEditing = true;
+        StateHasChanged();
+    }
+
+    async Task RefreshAsync()
     {
         try
         {
-            forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("WeatherForecast");
+            episodes = await Http.GetFromJsonAsync<Episode[]>("api/Episodes");
+            if (futureOnly)
+                episodes = episodes.Where(e => e.ScheduledStartTime >= DateTime.Now).ToArray();
+            shows = await Http.GetFromJsonAsync<Show[]>("api/Shows");
+            episode = new Episode() { ScheduledStartTime = DateTime.Now };
+            StateHasChanged();
         }
         catch (AccessTokenNotAvailableException exception)
         {
             exception.Redirect();
         }
+
     }
 
+    private Episode[] episodes;
+    private Show[] shows;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+    }
 }

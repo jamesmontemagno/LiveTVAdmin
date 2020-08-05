@@ -2,12 +2,12 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using LiveTVAdmin.Shared
-@*@attribute [Authorize]*@
+@attribute [Authorize]
 @inject HttpClient Http
 
-<h1>Show series</h1>
+<h1>Series</h1>
 
-<p>Create, updated, or delete show series.</p>
+<p>Create, updated, or delete Series.</p>
 
 @if (shows == null)
 {
@@ -54,32 +54,32 @@ else
         <p>
             <label>
                 Identifier:
-                <InputText id="id" @bind-Value="show.Id" />
-            </label>
+            </label><br />
+            <InputText id="id" @bind-Value="show.Id" />
         </p>
         <p>
             <label>
                 Name:
-                <InputText id="name" @bind-Value="show.Name" />
-            </label>
+            </label><br />
+            <InputText id="name" @bind-Value="show.Name" />
         </p>
         <p>
             <label>
                 Url:
-                <InputText id="url" @bind-Value="show.Url" />
-            </label>
+            </label><br />
+            <InputText id="url" @bind-Value="show.Url" />
         </p>
         <p>
             <label>
                 Description:
-                <InputText id="description" @bind-Value="show.Description" />
-            </label>
+            </label><br />
+            <InputText id="description" @bind-Value="show.Description" />
         </p>
         <p>
             <label>
                 ThumbnailUrl:
-                <InputText id="thumbnailUrl" @bind-Value="show.ThumbnailUrl" />
-            </label>
+            </label><br />
+            <InputText id="thumbnailUrl" @bind-Value="show.ThumbnailUrl" />
         </p>
 
         <button type="submit">Submit</button>
@@ -87,18 +87,18 @@ else
 }
 
 @code {
-    private Show show = new Show();
+    private Show show;
 
     private async void HandleValidSubmit()
     {
         if (show.IsEditing)
         {
-            await Http.PutAsJsonAsync($"Show/{show.Id}", show);
+            await Http.PutAsJsonAsync($"api/Shows/{show.Id}", show);
             show.IsEditing = false;
         }
         else
         {
-            await Http.PostAsJsonAsync("Show", show);
+            await Http.PostAsJsonAsync("api/Show", show);
         }
         show = new Show();
         await RefreshAsync();
@@ -108,7 +108,7 @@ else
 
     async Task DeleteAsync(Show deleteShow)
     {
-        await Http.DeleteAsync($"Show/{deleteShow.Id}");
+        await Http.DeleteAsync($"api/Shows/{deleteShow.Id}");
         await RefreshAsync();
     }
 
@@ -123,7 +123,8 @@ else
     {
         try
         {
-            shows = await Http.GetFromJsonAsync<Show[]>("Show");
+            shows = await Http.GetFromJsonAsync<Show[]>("api/Shows");
+            show = new Show();
             StateHasChanged();
         }
         catch (AccessTokenNotAvailableException exception)

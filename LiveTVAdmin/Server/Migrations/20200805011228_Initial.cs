@@ -1,9 +1,9 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace LiveTVAdmin.Server.Data.Migrations
+namespace LiveTVAdmin.Server.Migrations
 {
-    public partial class CreateIdentitySchema : Migration
+    public partial class Initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -64,6 +64,26 @@ namespace LiveTVAdmin.Server.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Episode",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    ShowId = table.Column<string>(nullable: false),
+                    Title = table.Column<string>(nullable: false),
+                    Url = table.Column<string>(nullable: false),
+                    CommunityLinksUrl = table.Column<string>(nullable: true),
+                    ShowNotesUrl = table.Column<string>(nullable: true),
+                    Description = table.Column<string>(nullable: false),
+                    ScheduledStartTime = table.Column<DateTime>(nullable: false),
+                    ThumbnailUrl = table.Column<string>(nullable: false),
+                    IsEditing = table.Column<bool>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Episode", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PersistedGrants",
                 columns: table => new
                 {
@@ -78,6 +98,22 @@ namespace LiveTVAdmin.Server.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PersistedGrants", x => x.Key);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Show",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    Name = table.Column<string>(nullable: false),
+                    Url = table.Column<string>(nullable: false),
+                    Description = table.Column<string>(nullable: false),
+                    ThumbnailUrl = table.Column<string>(nullable: false),
+                    IsEditing = table.Column<bool>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Show", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -268,7 +304,13 @@ namespace LiveTVAdmin.Server.Data.Migrations
                 name: "DeviceCodes");
 
             migrationBuilder.DropTable(
+                name: "Episode");
+
+            migrationBuilder.DropTable(
                 name: "PersistedGrants");
+
+            migrationBuilder.DropTable(
+                name: "Show");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
